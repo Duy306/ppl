@@ -10,25 +10,30 @@ class LexerSuite(unittest.TestCase):
     def test_lower_upper_id(self):
         self.assertTrue(TestLexer.checkLexeme("Var","Var,<EOF>",102))
 
+    def test_wrong_token(self):
+        self.assertTrue(TestLexer.checkLexeme("ab?svn","ab,Error Token ?",103))
+
     def test_integer(self):
         """test integers"""
         self.assertTrue(TestLexer.checkLexeme("Var x;","Var,x,;,<EOF>",104))
 
-    def test_normal_string_with_escape(self):
-        """test normal string with escape"""
-        self.assertTrue(TestLexer.checkLexeme(""" "ab'"c\\n\\' def"  ""","""ab"c\\n' def,<EOF>""",107))
-
-    def test_wrong_float_3(self):
-        self.assertTrue(TestLexer.checkLexeme(""" "He asked me: '"Where is John?'"" ""","""He asked me: "Where is John?",<EOF>""",142))
-
-    def test_wrong_token(self):
-        """test wrong token"""
-        self.assertTrue(TestLexer.checkLexeme("ab?svn","ab,Error Token ?",103))
+    def test_illegal_escape(self):
+        """test illegal escape"""
+        self.assertTrue(TestLexer.checkLexeme(""" "abc\\h def"  ""","""Illegal Escape In String: abc\\h""",105))
 
     def test_unterminated_string(self):
         """test unclosed string"""
         self.assertTrue(TestLexer.checkLexeme(""" "abc def  ""","""Unclosed String: abc def  """,106))
 
-    def test_illegal_escape(self):
-        """test illegal escape"""
-        self.assertTrue(TestLexer.checkLexeme(""" "abc\\h def"  ""","""Illegal Escape In String: abc\\h""",105))
+    def test_normal_string_with_escape(self):
+        """test normal string with escape"""
+        self.assertTrue(TestLexer.checkLexeme(""" "ab'"c\\n def"  ""","""ab'"c\\n def,<EOF>""",107))
+
+    def test_float(self):
+        self.assertTrue(TestLexer.checkLexeme(""" 34.142 ""","""34.142,<EOF>""",108))
+
+    def test_float2(self):
+        self.assertTrue(TestLexer.checkLexeme(""" 3.e-23 ""","""3.e-23,<EOF>""",109))
+        
+    def test_float3(self):
+        self.assertTrue(TestLexer.checkLexeme(""" 3e22 ""","""3e22,<EOF>""",110))

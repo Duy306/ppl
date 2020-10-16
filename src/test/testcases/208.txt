@@ -1,0 +1,4 @@
+Function: foo
+Body:
+a = (12. +. x) \. k[45] *. 3.e-23;
+EndBody.

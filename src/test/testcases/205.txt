@@ -1,0 +1,4 @@
+Function: foo
+Body:
+a = 12 * 3;
+EndBody.

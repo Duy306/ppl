@@ -1,1 +1,1 @@
- "ab'"c\n\' def"  
+ "ab'"c\n def"  

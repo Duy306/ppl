@@ -6,7 +6,7 @@ from antlr4 import *
 
 #Make sure that ANTLR_JAR is set to antlr-4.8-complete.jar
 ANTLR_JAR = os.environ.get('ANTLR_JAR')
-ANTLR_JAR = "antlr-4.8-complete.jar"
+ANTLR_JAR = 'antlr-4.8-complete.jar'
 TARGET = '../target/main/mc/parser' if os.name == 'posix' else os.path.normpath('../target/')
 
 def main(argv):
@@ -23,11 +23,11 @@ def main(argv):
             sys.path.append(TARGET)
         if len(argv) < 2:
             printUsage()
-        elif argv[1] == 'LexerSuite':
+        elif argv[1] == 'L':
             from LexerSuite import LexerSuite
             suite = unittest.makeSuite(LexerSuite)
             test(suite)
-        elif argv[1] == 'ParserSuite':
+        elif argv[1] == 'P':
             from ParserSuite import ParserSuite
             suite = unittest.makeSuite(ParserSuite)
             test(suite)

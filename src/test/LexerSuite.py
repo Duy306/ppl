@@ -27,7 +27,7 @@ class LexerSuite(unittest.TestCase):
 
     def test_normal_string_with_escape(self):
         """test normal string with escape"""
-        self.assertTrue(TestLexer.checkLexeme(""" "ab'"c\\n def"  ""","""ab'"c\\n def,<EOF>""",107))
+        self.assertTrue(TestLexer.checkLexeme(""" "ab'"c\\n def"  ""","""ab"c\\n def,<EOF>""",107))
 
     def test_float(self):
         self.assertTrue(TestLexer.checkLexeme(""" 34.142 ""","""34.142,<EOF>""",108))

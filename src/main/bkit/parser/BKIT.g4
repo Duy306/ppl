@@ -25,9 +25,12 @@ options{
 	language=Python3;
 }
 
-program     : var_decl program
-            | function program
-            | EOF;
+program     : var_decl*
+              function*
+              main
+              EOF;
+
+main        : FUNCTION CL 'main' BODY CL func_body ENDBODY FS;
 
 var_decl    : VAR CL var_list SM;
 
@@ -56,12 +59,17 @@ para_list   : var_id (CM var_id)*;
 
 func_body   : (statement)*;
 
-statement   : var_decl|assign|func_call SM|return_stm
+statement   : var_decl|assign|func_call SM|return_stm|built_in_func
             | if_stm|for_stm|while_stm|do_while;
+
+loop_body   : (statement_in_loop)*;
+
+statement_in_loop   : var_decl|assign|func_call SM|return_stm|built_in_func
+                    | if_in_loop|for_stm|while_stm|do_while|break_stm|continue_stm;
 
 func_call   : ID LP (exp (CM exp)*)? RP;
 
-assign      : var_id EQ (exp|string_cor) SM;
+assign      : var_id EQ (exp|string_cor|STRING_LIT|bool_exp) SM;
 
 return_stm  : RETURN exp SM;
 
@@ -70,17 +78,32 @@ if_stm:     IF bool_exp THEN func_body
             (ELSE func_body)?
             ENDIF FS;
 
-for_stm:    FOR(ID EQ exp CM bool_exp CM assign) DO
-                (statement|break_stm|continue_stm)*
+if_in_loop: IF bool_exp THEN loop_body
+            (ELSEIF bool_exp THEN loop_body)*
+            (ELSE loop_body)?
+            ENDIF FS;
+
+for_stm:    FOR LP ID EQ int_exp CM bool_exp CM int_exp RP DO
+            loop_body
             ENDFOR FS;
 
-while_stm:  WHILE bool_exp DO (statement|break_stm|continue_stm)* ENDWHILE FS;
+while_stm:  WHILE bool_exp DO loop_body ENDWHILE FS;
 
-do_while:   DO (statement|break_stm|continue_stm)* WHILE bool_exp ENDDO FS;
+do_while:   DO loop_body WHILE bool_exp ENDDO FS;
 
 break_stm:      BREAK SM;
 
 continue_stm:   CONTINUE SM;
+
+built_in_func       : (println_func 
+                    | print_func
+                    | printstrln_func
+                    | read_func) SM; 
+
+println_func        : 'printLn()';
+print_func          : 'print(' (STRING_LIT|var_id) RP;
+printstrln_func     : 'printStrLn(' (STRING_LIT|var_id) RP;
+read_func           : 'read()';
 
 int_cor     :   'int_of_float' LP float_exp RP
             |   'int_of_string' LP (STRING_LIT|var_id) RP;
@@ -105,7 +128,7 @@ float_exp2      :   LP float_exp RP
                 |   float_exp3;
 
 float_exp3      :   LP float_exp RP
-                |   FLOAT_LIT | ID | array_elm_id | func_call | float_cor;
+                |   FLOAT_ADD_OP? FLOAT_LIT | ID | array_elm_id | func_call | float_cor;
 
 int_exp         :   int_exp2 INT_ADD_OP int_exp
                 |   int_exp2;
@@ -115,15 +138,15 @@ int_exp2        :   LP int_exp RP
                 |   int_exp3;
 
 int_exp3        :   LP int_exp RP
-                |   INT_LIT | ID | array_elm_id | func_call | int_cor;
+                |   INT_ADD_OP? INT_LIT | ID | array_elm_id | func_call | int_cor;
 
-bool_exp    :   float_exp FLOAT_RL_OP float_exp
-            |   int_exp INT_RL_OP int_exp
-            |   bool_exp2 LOGIC bool_exp
+bool_exp    :   bool_exp2 LOGIC bool_exp
             |   NEGA bool_exp2
             |   bool_exp2;
 
 bool_exp2   :   LP bool_exp RP
+            |   float_exp FLOAT_RL_OP float_exp
+            |   int_exp INT_RL_OP int_exp
             |   BOOL_LIT | ID | array_elm_id | func_call | bool_cor;
 
 FUNCTION    : 'Function';
@@ -192,8 +215,8 @@ fragment EPS            : [Ee]'-'?;
 fragment US             : '_';
 fragment DOT            : '.';
 fragment CHAR           : ~['"\n\\] | ESCAPE_SEQ | SING_QUOTE DOUB_QUOTE;
-fragment ESCAPE_SEQ     : '\\' [bfrnt'\\];
-fragment ILL_ESCAPE     : '\\' ~[bfrnt'\\]|'\'';
+fragment ESCAPE_SEQ     : '\\' [bfrt'\\];
+fragment ILL_ESCAPE     : '\\' ~[bfrt'\\]|'\'';
 fragment STAR           : '**';
 
 WS      : [ \t\f\r\n]+ -> skip ;
@@ -205,7 +228,7 @@ UNCLOSE_STRING: DOUB_QUOTE CHAR* ('\n'|EOF){
 ILLEGAL_ESCAPE: DOUB_QUOTE CHAR* ILL_ESCAPE{
     raise IllegalEscape(self.text[1:])
 };
-UNTERMINATED_COMMENT: STAR (CHAR|ILL_ESCAPE)*;
+UNTERMINATED_COMMENT: STAR (CHAR|ILL_ESCAPE)* EOF;
 ERROR_CHAR: .{
     raise ErrorToken(self.text)
 };

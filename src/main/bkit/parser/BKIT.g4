@@ -155,10 +155,10 @@ EQ : '=';
 FLOAT_LIT   : DECIMAL ((DOT DIGIT* (EPS DIGIT+)?) | (EPS DIGIT+));
 INT_LIT     : HEX|OCTAL|DECIMAL;
 BOOL_LIT    : 'True'|'False';
-STRING_LIT  : DOUB_QUOTE (ESCAPE_SEQ | CHAR | '\'' | SING_QUOTE DOUB_QUOTE)* DOUB_QUOTE
-	{
-		self.text = self.text[1:-1].replace('\'"', '"').replace("\\'","'")
-	};
+STRING_LIT  : DOUB_QUOTE CHAR* DOUB_QUOTE {
+    tmp = str(self.text)
+    self.text = tmp[1:-1].replace('\'"', '"').replace("\\'","'").replace("\\\\","\\").replace("\\b","\b").replace("\\f","\f").replace("\\r","\r").replace("\\t","\t")
+};
 
 ID: LOWER(LOWER|UPPER|US|DIGIT)* ;
 //KEY: UPPER(LOWER|UPPER|US|DIGIT)* ;
@@ -183,7 +183,6 @@ fragment NOT_0_DIGIT    : [1-9];
 fragment DIGIT          : [0-9];
 fragment LOWER          : [a-z];
 fragment UPPER          : [A-Z];
-fragment CHAR           : ~['"];
 fragment SING_QUOTE     : '\'';
 fragment DOUB_QUOTE     : '"';
 fragment HEX            : '0'[xX](DIGIT|[A-F]|[a-f])+;
@@ -192,12 +191,21 @@ fragment DECIMAL        : (NOT_0_DIGIT DIGIT*)|'0';
 fragment EPS            : [Ee]'-'?;
 fragment US             : '_';
 fragment DOT            : '.';
+fragment CHAR           : ~['"\n\\] | ESCAPE_SEQ | SING_QUOTE DOUB_QUOTE;
 fragment ESCAPE_SEQ     : '\\' [bfrnt'\\];
+fragment ILL_ESCAPE     : '\\' ~[bfrnt'\\]|'\'';
+fragment STAR           : '**';
 
 WS      : [ \t\f\r\n]+ -> skip ;
-//CMT   : '**'(.)*'**' -> skip ;
+CMT     : STAR (CHAR|ILL_ESCAPE)* STAR -> skip ;
 
-ERROR_CHAR: .;
-UNCLOSE_STRING: .;
-ILLEGAL_ESCAPE: .;
-UNTERMINATED_COMMENT: .;
+UNCLOSE_STRING: DOUB_QUOTE CHAR* ('\n'|EOF){
+    raise UncloseString(self.text[1:])
+};
+ILLEGAL_ESCAPE: DOUB_QUOTE CHAR* ILL_ESCAPE{
+    raise IllegalEscape(self.text[1:])
+};
+UNTERMINATED_COMMENT: STAR (CHAR|ILL_ESCAPE)*;
+ERROR_CHAR: .{
+    raise ErrorToken(self.text)
+};
